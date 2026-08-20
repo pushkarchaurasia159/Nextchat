@@ -1,0 +1,77 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id          String            @id @default(uuid())
+  phone       String            @unique
+  name        String
+  password    String
+  avatar      String?
+  about       String            @default("Hey there! I am using NextChat.")
+  isOnline    Boolean           @default(false)
+  lastSeen    DateTime          @default(now())
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  participants ChatParticipant[]
+  sentMessages  Message[]
+  createdChats  Chat[]          @relation("ChatCreator")
+}
+
+model Chat {
+  id               String            @id @default(uuid())
+  isGroup          Boolean           @default(false)
+  name             String?
+  avatar           String?
+  description      String?
+  creatorId        String?
+  adminOnlyMessage Boolean           @default(false)
+  adminOnlyInfo    Boolean           @default(false)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  creator          User?             @relation("ChatCreator", fields: [creatorId], references: [id])
+  participants     ChatParticipant[]
+  messages         Message[]
+}
+
+model ChatParticipant {
+  id         String   @id @default(uuid())
+  chatId     String
+  userId     String
+  role       String   @default("MEMBER") // "ADMIN", "MEMBER"
+  joinedAt   DateTime @default(now())
+  lastReadAt DateTime @default(now())
+
+  chat       Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+}
+
+model Message {
+  id         String    @id @default(uuid())
+  chatId     String
+  senderId   String
+  content    String?
+  type       String    @default("TEXT") // "TEXT", "IMAGE", "AUDIO", "DOCUMENT", "SYSTEM"
+  mediaUrl   String?
+  fileName   String?
+  fileSize   Int?
+  replyToId  String?
+  isDeleted  Boolean   @default(false)
+  deletedFor String    @default("[]") // JSON string of user IDs who deleted this for themselves
+  status     String    @default("SENT") // "SENT", "DELIVERED", "READ"
+  createdAt  DateTime  @default(now())
+
+  chat       Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender     User      @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  replyTo    Message?  @relation("MessageReplies", fields: [replyToId], references: [id])
+  replies    Message[] @relation("MessageReplies")
+}

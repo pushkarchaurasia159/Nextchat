@@ -1,0 +1,30 @@
+{
+  "name": "nextchat",
+  "version": "1.0.0",
+  "description": "Real-time WhatsApp-like Chatting Web Application with Admin Features",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "node server/index.js",
+    "client:dev": "npm --prefix client run dev",
+    "client:build": "npm --prefix client run build",
+    "build": "npm run client:build && npx prisma db push",
+    "start": "node server/index.js",
+    "prisma:generate": "npx prisma generate",
+    "prisma:push": "npx prisma db push",
+    "prisma:studio": "npx prisma studio"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.4.1",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "prisma": "^6.4.1"
+  }
+}
