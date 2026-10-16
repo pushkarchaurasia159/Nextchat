@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { useSocket } from './SocketContext';
+import { playSendSound, playReceiveSound, playReactionSound, playPopSound } from '../utils/sound';
 
 const ChatContext = createContext(null);
 
 export const ChatProvider = ({ children }) => {
-  const { user, token } = useAuth();
+  const { user, token, soundEnabled } = useAuth();
   const { socket, onlineUsersMap } = useSocket();
 
   const [chats, setChats] = useState([]);
@@ -14,10 +15,10 @@ export const ChatProvider = ({ children }) => {
   const [messages, setMessages] = useState([]);
   const [loadingChats, setLoadingChats] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
-  const [typingUsers, setTypingUsers] = useState({}); // chatId -> [ { userId, userName } ]
+  const [typingUsers, setTypingUsers] = useState({});
   const [replyingTo, setReplyingTo] = useState(null);
   const [searchFilter, setSearchFilter] = useState('');
-  const [tabFilter, setTabFilter] = useState('all'); // 'all', 'unread', 'groups'
+  const [tabFilter, setTabFilter] = useState('all'); // 'all', 'unread', 'groups', 'ai'
 
   const activeChatIdRef = useRef(activeChatId);
   useEffect(() => {
@@ -82,8 +83,8 @@ export const ChatProvider = ({ children }) => {
 
     setActiveChatId(chatId);
     setReplyingTo(null);
+    playPopSound(soundEnabled);
 
-    // Fetch full chat info
     try {
       const res = await fetch(`/api/chats/${chatId}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -101,24 +102,30 @@ export const ChatProvider = ({ children }) => {
       socket.emit('read_messages', { chatId });
     }
 
-    // Reset unread count locally in chats list
     setChats(prev =>
       prev.map(c => (c.id === chatId ? { ...c, unreadCount: 0 } : c))
     );
 
     fetchMessages(chatId);
-  }, [token, socket, fetchMessages]);
+  }, [token, socket, soundEnabled, fetchMessages]);
 
   // Send message
-  const sendMessage = async ({ content, type = 'TEXT', file = null, replyToId = null }) => {
+  const sendMessage = async ({
+    content,
+    type = 'TEXT',
+    file = null,
+    replyToId = null,
+    selfDestructDuration = null,
+    pollData = null
+  }) => {
     if (!activeChatId || !token) return;
 
     if (file) {
-      // Use multipart FormData
       const formData = new FormData();
       if (content) formData.append('content', content);
       formData.append('type', type);
       if (replyToId) formData.append('replyToId', replyToId);
+      if (selfDestructDuration) formData.append('selfDestructDuration', selfDestructDuration);
       formData.append('media', file);
 
       try {
@@ -131,7 +138,7 @@ export const ChatProvider = ({ children }) => {
         if (data.success && data.message) {
           setMessages(prev => [...prev, data.message]);
           setReplyingTo(null);
-          // Broadcast via socket to room
+          playSendSound(soundEnabled);
           if (socket) {
             socket.emit('send_message', {
               chatId: activeChatId,
@@ -148,16 +155,140 @@ export const ChatProvider = ({ children }) => {
         throw err;
       }
     } else {
-      // Send standard text via Socket.IO
       if (socket) {
         socket.emit('send_message', {
           chatId: activeChatId,
           content,
           type,
-          replyToId
+          replyToId,
+          selfDestructDuration,
+          pollData
         });
         setReplyingTo(null);
+        playSendSound(soundEnabled);
       }
+    }
+  };
+
+  // Toggle emoji reaction
+  const reactToMessage = async (messageId, emoji) => {
+    if (!token) return;
+    playReactionSound(soundEnabled);
+    try {
+      const res = await fetch(`/api/messages/${messageId}/react`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ emoji })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessages(prev =>
+          prev.map(m => (m.id === messageId ? data.message : m))
+        );
+        if (socket && activeChatId) {
+          socket.emit('react_message', {
+            chatId: activeChatId,
+            messageId,
+            emoji,
+            reactions: data.reactions
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Error reacting to message:', err);
+    }
+  };
+
+  // Pin / Unpin message
+  const pinMessage = async (messageId) => {
+    if (!token) return;
+    try {
+      const res = await fetch(`/api/messages/${messageId}/pin`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessages(prev =>
+          prev.map(m => (m.id === messageId ? { ...m, isPinned: data.isPinned } : m))
+        );
+        if (socket && activeChatId) {
+          socket.emit('pin_message', {
+            chatId: activeChatId,
+            messageId,
+            isPinned: data.isPinned
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Error pinning message:', err);
+    }
+  };
+
+  // Vote in Poll
+  const votePoll = async (messageId, optionId) => {
+    if (!token) return;
+    playPopSound(soundEnabled);
+    try {
+      const res = await fetch(`/api/messages/${messageId}/poll/vote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ optionId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessages(prev =>
+          prev.map(m => (m.id === messageId ? data.message : m))
+        );
+        if (socket && activeChatId) {
+          socket.emit('poll_vote', {
+            chatId: activeChatId,
+            messageId,
+            pollData: data.pollData
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Error voting in poll:', err);
+    }
+  };
+
+  // Ask AI Assistant
+  const askAI = async ({ prompt, type = 'CHAT', targetLanguage = 'Spanish' }) => {
+    if (!token) return;
+    try {
+      const res = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          prompt,
+          type,
+          chatId: activeChatId,
+          targetLanguage
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (data.message && activeChatId) {
+          setMessages(prev => [...prev, data.message]);
+          playReceiveSound(soundEnabled);
+        }
+        return data.response;
+      } else {
+        throw new Error(data.message || 'AI processing failed');
+      }
+    } catch (err) {
+      console.error('Ask AI error:', err);
+      throw err;
     }
   };
 
@@ -398,22 +529,20 @@ export const ChatProvider = ({ children }) => {
     }
   };
 
-  // Socket listeners for incoming messages & real-time updates
+  // Socket listeners for incoming real-time events
   useEffect(() => {
     if (!socket) return;
 
     const handleNewMessage = ({ chatId, message }) => {
       if (activeChatIdRef.current === chatId) {
         setMessages(prev => {
-          // Avoid duplicate messages
           if (prev.some(m => m.id === message.id)) return prev;
           return [...prev, message];
         });
-        // Immediately emit read receipt
+        playReceiveSound(soundEnabled);
         socket.emit('read_messages', { chatId });
       }
 
-      // Update chats list latest message and sort to top
       setChats(prev => {
         const index = prev.findIndex(c => c.id === chatId);
         if (index !== -1) {
@@ -431,6 +560,44 @@ export const ChatProvider = ({ children }) => {
         }
         return prev;
       });
+    };
+
+    const handleMessageReaction = ({ chatId, messageId, emoji, reactions }) => {
+      if (activeChatIdRef.current === chatId) {
+        setMessages(prev =>
+          prev.map(m =>
+            m.id === messageId
+              ? { ...m, reactions: typeof reactions === 'string' ? reactions : JSON.stringify(reactions) }
+              : m
+          )
+        );
+      }
+    };
+
+    const handleMessagePinned = ({ chatId, messageId, isPinned }) => {
+      if (activeChatIdRef.current === chatId) {
+        setMessages(prev =>
+          prev.map(m => (m.id === messageId ? { ...m, isPinned } : m))
+        );
+      }
+    };
+
+    const handlePollUpdated = ({ chatId, messageId, pollData }) => {
+      if (activeChatIdRef.current === chatId) {
+        setMessages(prev =>
+          prev.map(m =>
+            m.id === messageId
+              ? { ...m, pollData: typeof pollData === 'string' ? pollData : JSON.stringify(pollData) }
+              : m
+          )
+        );
+      }
+    };
+
+    const handleMessageExpired = ({ chatId, messageId }) => {
+      if (activeChatIdRef.current === chatId) {
+        setMessages(prev => prev.filter(m => m.id !== messageId));
+      }
     };
 
     const handleMessagesReadReceipt = ({ chatId, readByUserId }) => {
@@ -463,7 +630,6 @@ export const ChatProvider = ({ children }) => {
     };
 
     const handleChatNotification = ({ chatId, message }) => {
-      // Refresh chat list or bump chat to top
       fetchChats();
     };
 
@@ -475,6 +641,10 @@ export const ChatProvider = ({ children }) => {
     };
 
     socket.on('new_message', handleNewMessage);
+    socket.on('message_reaction', handleMessageReaction);
+    socket.on('message_pinned', handleMessagePinned);
+    socket.on('poll_updated', handlePollUpdated);
+    socket.on('message_expired', handleMessageExpired);
     socket.on('messages_read_receipt', handleMessagesReadReceipt);
     socket.on('typing', handleTyping);
     socket.on('stop_typing', handleStopTyping);
@@ -483,13 +653,17 @@ export const ChatProvider = ({ children }) => {
 
     return () => {
       socket.off('new_message', handleNewMessage);
+      socket.off('message_reaction', handleMessageReaction);
+      socket.off('message_pinned', handleMessagePinned);
+      socket.off('poll_updated', handlePollUpdated);
+      socket.off('message_expired', handleMessageExpired);
       socket.off('messages_read_receipt', handleMessagesReadReceipt);
       socket.off('typing', handleTyping);
       socket.off('stop_typing', handleStopTyping);
       socket.off('chat_notification', handleChatNotification);
       socket.off('group_event', handleGroupEvent);
     };
-  }, [socket, user?.id, selectChat, fetchChats]);
+  }, [socket, user?.id, soundEnabled, selectChat, fetchChats]);
 
   return (
     <ChatContext.Provider
@@ -510,6 +684,10 @@ export const ChatProvider = ({ children }) => {
         fetchChats,
         selectChat,
         sendMessage,
+        reactToMessage,
+        pinMessage,
+        votePoll,
+        askAI,
         deleteMessage,
         createDirectChat,
         createGroupChat,

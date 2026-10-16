@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
 import Avatar from '../common/Avatar';
-import { X, Users, Image as ImageIcon, Check, Search, Sparkles } from 'lucide-react';
+import { X, Users, Image as ImageIcon, Check, Search } from 'lucide-react';
 
 const NewGroupModal = ({ isOpen, onClose }) => {
   const { token } = useAuth();
@@ -71,7 +71,7 @@ const NewGroupModal = ({ isOpen, onClose }) => {
   const handleCreateGroup = async (e) => {
     e.preventDefault();
     if (!name.trim()) {
-      setError('Please provide a group subject/name');
+      setError('Please provide a group subject');
       return;
     }
 
@@ -103,35 +103,35 @@ const NewGroupModal = ({ isOpen, onClose }) => {
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="w-full max-w-lg bg-[#111b21] rounded-2xl shadow-2xl border border-[#222d34] overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-pop">
+      <div className="w-full max-w-lg glass-panel bg-[#070D1E] rounded-3xl shadow-2xl border border-sky-400/20 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="px-5 py-4 bg-[#202c33] flex items-center justify-between border-b border-[#222d34]">
-          <h2 className="text-base font-semibold text-[#e9edef] flex items-center gap-2">
-            <Users className="w-5 h-5 text-[#00a884]" />
-            New Group
+        <div className="px-5 py-4 bg-[#0E1A34]/80 flex items-center justify-between border-b border-white/10">
+          <h2 className="text-sm font-bold text-white flex items-center gap-2">
+            <Users className="w-4 h-4 text-sky-400" />
+            Create NextChat Group
           </h2>
           <button
             onClick={onClose}
-            className="p-1 rounded-full text-[#8696a0] hover:text-[#e9edef] hover:bg-[#374248] transition"
+            className="p-1 rounded-full text-slate-400 hover:text-white"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {error && (
-          <div className="p-3 bg-red-500/10 border-b border-red-500/30 text-red-400 text-xs">
+          <div className="p-3 bg-rose-500/15 border-b border-rose-500/30 text-rose-300 text-xs">
             {error}
           </div>
         )}
 
         <form onSubmit={handleCreateGroup} className="flex-1 flex flex-col min-h-0">
-          <div className="p-4 space-y-4 border-b border-[#222d34] overflow-y-auto">
+          <div className="p-4 space-y-4 border-b border-white/10 overflow-y-auto">
             {/* Group Avatar & Name */}
             <div className="flex items-center gap-4">
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="relative w-16 h-16 rounded-full bg-[#202c33] border-2 border-dashed border-[#8696a0]/40 hover:border-[#00a884] cursor-pointer flex items-center justify-center overflow-hidden transition group flex-shrink-0"
+                className="relative w-16 h-16 rounded-2xl bg-[#0A1226] border-2 border-dashed border-sky-400/20 hover:border-sky-400 cursor-pointer flex items-center justify-center overflow-hidden transition group flex-shrink-0"
               >
                 {avatarPreview ? (
                   <img
@@ -140,10 +140,10 @@ const NewGroupModal = ({ isOpen, onClose }) => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <ImageIcon className="w-6 h-6 text-[#8696a0] group-hover:text-[#00a884]" />
+                  <ImageIcon className="w-6 h-6 text-slate-500 group-hover:text-sky-400" />
                 )}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[10px] text-white transition">
-                  Upload Icon
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[9px] text-white">
+                  Icon
                 </div>
               </div>
               <input
@@ -160,19 +160,19 @@ const NewGroupModal = ({ isOpen, onClose }) => {
                   placeholder="Group subject (required)"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-[#202c33] text-[#e9edef] placeholder-[#8696a0] text-sm rounded-lg px-3 py-2.5 outline-none focus:ring-1 focus:ring-[#00a884] border border-[#2a3942]"
+                  className="w-full glass-input text-white placeholder-slate-500 text-xs rounded-xl px-3.5 py-2.5 outline-none"
                   required
                 />
               </div>
             </div>
 
-            {/* Group Description */}
+            {/* Description */}
             <input
               type="text"
               placeholder="Group description (optional)"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full bg-[#202c33] text-[#e9edef] placeholder-[#8696a0] text-xs rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-[#00a884] border border-[#2a3942]"
+              className="w-full glass-input text-white placeholder-slate-500 text-xs rounded-xl px-3.5 py-2 outline-none"
             />
 
             {/* Selected Member Chips */}
@@ -185,7 +185,7 @@ const NewGroupModal = ({ isOpen, onClose }) => {
                     <span
                       key={uid}
                       onClick={() => toggleUser(uid)}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#00a884]/20 border border-[#00a884]/40 text-[#00a884] text-xs cursor-pointer hover:bg-red-500/20 hover:border-red-500/40 hover:text-red-400 transition"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/20 border border-sky-400/40 text-sky-300 text-xs cursor-pointer hover:bg-rose-500/20 hover:border-rose-500/40 hover:text-rose-300 transition"
                     >
                       {u.name}
                       <X className="w-3 h-3" />
@@ -196,27 +196,27 @@ const NewGroupModal = ({ isOpen, onClose }) => {
             )}
           </div>
 
-          {/* Member Selection Section */}
+          {/* Member Selection */}
           <div className="flex-1 flex flex-col min-h-0 p-3">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-[#8696a0]">
-                Add Participants ({selectedUserIds.length} selected)
+              <span className="text-xs font-semibold text-slate-400">
+                Select Members ({selectedUserIds.length})
               </span>
               <div className="relative w-48">
-                <Search className="w-3.5 h-3.5 text-[#8696a0] absolute left-2.5 top-1/2 -translate-y-1/2" />
+                <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Filter users..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-[#202c33] text-[#e9edef] placeholder-[#8696a0] text-xs rounded-md pl-7 pr-2 py-1 outline-none border border-[#2a3942]"
+                  className="w-full glass-input text-white placeholder-slate-500 text-xs rounded-xl pl-7 pr-2 py-1 outline-none"
                 />
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto divide-y divide-[#222d34]/40">
+            <div className="flex-1 overflow-y-auto divide-y divide-white/5">
               {filteredUsers.length === 0 ? (
-                <div className="p-6 text-center text-xs text-[#8696a0]">
+                <div className="p-6 text-center text-xs text-slate-500">
                   No contacts available to add
                 </div>
               ) : (
@@ -226,8 +226,8 @@ const NewGroupModal = ({ isOpen, onClose }) => {
                     <div
                       key={targetUser.id}
                       onClick={() => toggleUser(targetUser.id)}
-                      className={`flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition ${
-                        isSelected ? 'bg-[#00a884]/15' : 'hover:bg-[#202c33]'
+                      className={`flex items-center justify-between p-2.5 rounded-2xl cursor-pointer transition ${
+                        isSelected ? 'bg-sky-500/15' : 'hover:bg-[#13203E]/50'
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -237,20 +237,20 @@ const NewGroupModal = ({ isOpen, onClose }) => {
                           size="sm"
                         />
                         <div>
-                          <p className="text-xs font-semibold text-[#e9edef]">
+                          <p className="text-xs font-bold text-white">
                             {targetUser.name}
                           </p>
-                          <p className="text-[11px] text-[#8696a0]">
+                          <p className="text-[10px] text-slate-400 font-mono">
                             {targetUser.phone}
                           </p>
                         </div>
                       </div>
 
                       <div
-                        className={`w-5 h-5 rounded-md border flex items-center justify-center transition ${
+                        className={`w-5 h-5 rounded-lg border flex items-center justify-center transition ${
                           isSelected
-                            ? 'bg-[#00a884] border-[#00a884] text-[#111b21]'
-                            : 'border-[#8696a0]/40'
+                            ? 'bg-sky-500 border-sky-500 text-slate-950 font-bold'
+                            : 'border-white/20'
                         }`}
                       >
                         {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
@@ -263,24 +263,20 @@ const NewGroupModal = ({ isOpen, onClose }) => {
           </div>
 
           {/* Footer Submit */}
-          <div className="p-3 bg-[#202c33] border-t border-[#222d34] flex justify-end gap-2">
+          <div className="p-3 bg-[#0E1A34]/80 border-t border-white/10 flex justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-[#8696a0] hover:text-[#e9edef] transition"
+              className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || !name.trim()}
-              className="px-5 py-2 bg-[#00a884] hover:bg-[#02906f] text-white text-xs font-semibold rounded-lg shadow-lg transition disabled:opacity-50 flex items-center gap-2"
+              className="px-5 py-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-slate-950 text-xs font-bold rounded-xl shadow-lg transition disabled:opacity-50"
             >
-              {loading ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                'Create Group'
-              )}
+              {loading ? 'Creating...' : 'Create Group'}
             </button>
           </div>
         </form>

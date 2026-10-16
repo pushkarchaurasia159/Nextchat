@@ -16,7 +16,13 @@ const initializeSocket = (io) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'nextchat_jwt_secret');
       const user = await prisma.user.findUnique({
         where: { id: decoded.id },
-        select: { id: true, name: true, phone: true, avatar: true }
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          avatar: true,
+          ghostMode: true
+        }
       });
 
       if (!user) {
@@ -32,8 +38,8 @@ const initializeSocket = (io) => {
 
   io.on('connection', async (socket) => {
     const userId = socket.user.id;
+    const isGhost = socket.user.ghostMode;
 
-    // Add socket to user's active set
     if (!onlineUsers.has(userId)) {
       onlineUsers.set(userId, new Set());
     }
@@ -42,39 +48,41 @@ const initializeSocket = (io) => {
     // Join user's personal private room for direct notifications
     socket.join(`user_${userId}`);
 
-    // Update database status to online
-    try {
-      await prisma.user.update({
-        where: { id: userId },
-        data: { isOnline: true }
-      });
-      // Broadcast online status to all
-      io.emit('user_status_change', {
-        userId,
-        isOnline: true,
-        lastSeen: new Date()
-      });
-    } catch (e) {
-      console.error('Error updating user online status:', e.message);
+    // Update database status to online (if not in Ghost Mode)
+    if (!isGhost) {
+      try {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { isOnline: true }
+        });
+        io.emit('user_status_change', {
+          userId,
+          isOnline: true,
+          lastSeen: new Date()
+        });
+      } catch (e) {
+        console.error('Error updating user online status:', e.message);
+      }
     }
 
-    // Join specific chat room
+    // Join / Leave chat rooms
     socket.on('join_chat', (chatId) => {
       socket.join(`chat_${chatId}`);
     });
 
-    // Leave specific chat room
     socket.on('leave_chat', (chatId) => {
       socket.leave(`chat_${chatId}`);
     });
 
-    // Typing indicators
+    // Typing indicators (suppressed in ghost mode)
     socket.on('typing', ({ chatId, userName }) => {
-      socket.to(`chat_${chatId}`).emit('typing', {
-        chatId,
-        userId: socket.user.id,
-        userName: userName || socket.user.name
-      });
+      if (!socket.user.ghostMode) {
+        socket.to(`chat_${chatId}`).emit('typing', {
+          chatId,
+          userId: socket.user.id,
+          userName: userName || socket.user.name
+        });
+      }
     });
 
     socket.on('stop_typing', ({ chatId }) => {
@@ -87,9 +95,18 @@ const initializeSocket = (io) => {
     // Real-time message dispatch
     socket.on('send_message', async (messageData) => {
       try {
-        const { chatId, content, type = 'TEXT', mediaUrl, fileName, fileSize, replyToId } = messageData;
+        const {
+          chatId,
+          content,
+          type = 'TEXT',
+          mediaUrl,
+          fileName,
+          fileSize,
+          replyToId,
+          selfDestructDuration,
+          pollData
+        } = messageData;
 
-        // Fetch chat and verify sender
         const chat = await prisma.chat.findUnique({
           where: { id: chatId },
           include: { participants: true }
@@ -100,10 +117,22 @@ const initializeSocket = (io) => {
         const myParticipant = chat.participants.find(p => p.userId === userId);
         if (!myParticipant) return;
 
-        // Check group admin message restriction
         if (chat.isGroup && chat.adminOnlyMessage && myParticipant.role !== 'ADMIN') {
           socket.emit('error_message', { message: 'Only admins can send messages in this group' });
           return;
+        }
+
+        let expiresAt = null;
+        let durationNumber = selfDestructDuration ? parseInt(selfDestructDuration) : null;
+        if (durationNumber && durationNumber > 0) {
+          expiresAt = new Date(Date.now() + durationNumber * 1000);
+        }
+
+        let finalPollData = null;
+        let messageType = type;
+        if (pollData) {
+          finalPollData = typeof pollData === 'string' ? pollData : JSON.stringify(pollData);
+          messageType = 'POLL';
         }
 
         const message = await prisma.message.create({
@@ -111,11 +140,15 @@ const initializeSocket = (io) => {
             chatId,
             senderId: userId,
             content: content ? content.trim() : null,
-            type,
+            type: messageType,
             mediaUrl,
             fileName,
             fileSize,
             replyToId: replyToId || null,
+            selfDestructDuration: durationNumber,
+            expiresAt,
+            pollData: finalPollData,
+            reactions: '{}',
             status: 'SENT'
           },
           include: {
@@ -138,7 +171,7 @@ const initializeSocket = (io) => {
         // Broadcast to chat room
         io.to(`chat_${chatId}`).emit('new_message', { chatId, message });
 
-        // Also notify all chat participants who might not be actively looking inside this chat room
+        // Notify participants
         chat.participants.forEach((p) => {
           if (p.userId !== userId) {
             io.to(`user_${p.userId}`).emit('chat_notification', {
@@ -155,8 +188,38 @@ const initializeSocket = (io) => {
       }
     });
 
-    // Mark messages as read
+    // Real-time Reaction
+    socket.on('react_message', ({ chatId, messageId, emoji, reactions }) => {
+      io.to(`chat_${chatId}`).emit('message_reaction', {
+        chatId,
+        messageId,
+        emoji,
+        userId: socket.user.id,
+        reactions
+      });
+    });
+
+    // Real-time Pin
+    socket.on('pin_message', ({ chatId, messageId, isPinned }) => {
+      io.to(`chat_${chatId}`).emit('message_pinned', {
+        chatId,
+        messageId,
+        isPinned
+      });
+    });
+
+    // Real-time Poll Vote
+    socket.on('poll_vote', ({ chatId, messageId, pollData }) => {
+      io.to(`chat_${chatId}`).emit('poll_updated', {
+        chatId,
+        messageId,
+        pollData
+      });
+    });
+
+    // Mark messages as read (unless in ghost mode)
     socket.on('read_messages', async ({ chatId }) => {
+      if (socket.user.ghostMode) return;
       try {
         await prisma.chatParticipant.updateMany({
           where: { chatId, userId },
@@ -172,7 +235,6 @@ const initializeSocket = (io) => {
           data: { status: 'READ' }
         });
 
-        // Notify chat participants that messages are read (blue ticks)
         io.to(`chat_${chatId}`).emit('messages_read_receipt', {
           chatId,
           readByUserId: userId
@@ -182,31 +244,33 @@ const initializeSocket = (io) => {
       }
     });
 
-    // Notify group update (admin actions, member changes, settings)
+    // Group update events
     socket.on('group_event', ({ chatId, type, data }) => {
       io.to(`chat_${chatId}`).emit('group_event', { chatId, type, data });
     });
 
-    // Handle user disconnect
+    // Disconnect
     socket.on('disconnect', async () => {
       const userSockets = onlineUsers.get(userId);
       if (userSockets) {
         userSockets.delete(socket.id);
         if (userSockets.size === 0) {
           onlineUsers.delete(userId);
-          const lastSeen = new Date();
-          try {
-            await prisma.user.update({
-              where: { id: userId },
-              data: { isOnline: false, lastSeen }
-            });
-            io.emit('user_status_change', {
-              userId,
-              isOnline: false,
-              lastSeen
-            });
-          } catch (e) {
-            console.error('Error updating offline status:', e.message);
+          if (!socket.user.ghostMode) {
+            const lastSeen = new Date();
+            try {
+              await prisma.user.update({
+                where: { id: userId },
+                data: { isOnline: false, lastSeen }
+              });
+              io.emit('user_status_change', {
+                userId,
+                isOnline: false,
+                lastSeen
+              });
+            } catch (e) {
+              console.error('Error updating offline status:', e.message);
+            }
           }
         }
       }

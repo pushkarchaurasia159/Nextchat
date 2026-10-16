@@ -11,14 +11,12 @@ const Sidebar = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   return (
-    <aside className="w-full md:w-[380px] lg:w-[420px] h-full flex flex-col bg-[#111b21] border-r border-[#222d34] flex-shrink-0 relative overflow-hidden">
-      {/* Profile sliding drawer */}
+    <aside className="w-full md:w-[380px] lg:w-[420px] h-full flex flex-col glass-panel border-r border-white/10 flex-shrink-0 relative overflow-hidden">
       <ProfileDrawer
         isOpen={isProfileOpen}
         onClose={() => setIsProfileOpen(false)}
       />
 
-      {/* Main Sidebar Views */}
       <SidebarHeader
         onOpenNewChat={() => setIsNewChatOpen(true)}
         onOpenNewGroup={() => setIsNewGroupOpen(true)}
@@ -27,7 +25,6 @@ const Sidebar = () => {
 
       <ChatList onOpenNewChat={() => setIsNewChatOpen(true)} />
 
-      {/* Modals */}
       <NewChatModal
         isOpen={isNewChatOpen}
         onClose={() => setIsNewChatOpen(false)}

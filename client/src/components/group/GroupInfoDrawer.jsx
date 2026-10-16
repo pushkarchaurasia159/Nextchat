@@ -14,11 +14,8 @@ import {
   UserMinus,
   LogOut,
   Trash2,
-  Lock,
-  MessageSquare,
-  Search,
   Crown,
-  Users
+  Search
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -62,11 +59,9 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
   const myParticipant = participants.find((p) => p.userId === user?.id);
   const myRole = myParticipant ? myParticipant.role : 'MEMBER';
   const isAdmin = myRole === 'ADMIN';
-  const isCreator = activeChat.creatorId === user?.id;
 
   const canEditInfo = !isGroup || !activeChat.adminOnlyInfo || isAdmin;
 
-  // Handle Avatar Change
   const handleAvatarChange = async (e) => {
     const file = e.target.files[0];
     if (file && canEditInfo) {
@@ -80,7 +75,6 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
     }
   };
 
-  // Handle Save Name
   const handleSaveName = async () => {
     if (!name.trim()) return;
     try {
@@ -93,7 +87,6 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
     }
   };
 
-  // Handle Save Description
   const handleSaveDesc = async () => {
     try {
       const formData = new FormData();
@@ -105,7 +98,6 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
     }
   };
 
-  // Toggle Admin Setting: Send Messages
   const handleToggleAdminOnlyMessage = async () => {
     if (!isAdmin) return;
     try {
@@ -117,7 +109,6 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
     }
   };
 
-  // Toggle Admin Setting: Edit Info
   const handleToggleAdminOnlyInfo = async () => {
     if (!isAdmin) return;
     try {
@@ -129,7 +120,6 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
     }
   };
 
-  // Open Add Members Modal
   const openAddMembersModal = async () => {
     try {
       setLoading(true);
@@ -139,7 +129,6 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
       });
       const data = await res.json();
       if (data.success) {
-        // Filter out users already in the group
         const existingIds = participants.map((p) => p.userId);
         setAvailableUsers((data.users || []).filter((u) => !existingIds.includes(u.id)));
         setIsAddMemberOpen(true);
@@ -151,7 +140,6 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
     }
   };
 
-  // Add Members submit
   const handleAddMembersSubmit = async () => {
     if (selectedUserIds.length === 0) return;
     try {
@@ -163,7 +151,6 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
     }
   };
 
-  // Remove Member (Admin power)
   const handleRemoveMember = async (targetUserId, targetName) => {
     if (window.confirm(`Remove ${targetName} from the group?`)) {
       try {
@@ -174,7 +161,6 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
     }
   };
 
-  // Promote / Demote Admin
   const handleChangeRole = async (targetUserId, newRole) => {
     try {
       await changeGroupRole(activeChat.id, targetUserId, newRole);
@@ -183,7 +169,6 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
     }
   };
 
-  // Leave Group
   const handleLeaveGroup = async () => {
     if (window.confirm('Are you sure you want to leave this group?')) {
       try {
@@ -195,12 +180,11 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
     }
   };
 
-  // Delete Group (Creator or Admin)
   const handleDeleteGroup = async () => {
     if (
       window.confirm(
         isGroup
-          ? 'Are you sure you want to permanently delete this group for all members?'
+          ? 'Are you sure you want to permanently delete this group?'
           : 'Delete this conversation?'
       )
     ) {
@@ -214,29 +198,29 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="w-full md:w-[380px] lg:w-[420px] h-full bg-[#111b21] border-l border-[#222d34] flex flex-col flex-shrink-0 z-20 animate-slide-left overflow-hidden">
+    <div className="w-full md:w-[380px] lg:w-[420px] h-full glass-panel bg-[#070D1E]/95 border-l border-sky-400/10 flex flex-col flex-shrink-0 z-20 animate-slide-left overflow-hidden backdrop-blur-2xl">
       {/* Header */}
-      <div className="h-16 bg-[#202c33] px-4 flex items-center justify-between border-b border-[#222d34] flex-shrink-0">
+      <div className="h-16 bg-[#0E1A34]/60 px-4 flex items-center justify-between border-b border-sky-400/10 flex-shrink-0">
         <div className="flex items-center gap-3">
           <button
             onClick={onClose}
-            className="p-1 rounded-full text-[#aebac1] hover:text-[#e9edef] hover:bg-[#374248] transition"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition"
           >
             <X className="w-5 h-5" />
           </button>
-          <h2 className="text-sm font-semibold text-[#e9edef]">
-            {isGroup ? 'Group Info' : 'Contact Info'}
+          <h2 className="text-xs font-bold text-white uppercase tracking-wider">
+            {isGroup ? 'Group Management' : 'Contact Info'}
           </h2>
         </div>
       </div>
 
-      {/* Content Container */}
-      <div className="flex-1 overflow-y-auto divide-y divide-[#222d34]/60">
-        {/* Profile / Group Avatar & Title Card */}
-        <div className="p-6 flex flex-col items-center bg-[#111b21] text-center">
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto divide-y divide-white/5">
+        {/* Avatar & Title */}
+        <div className="p-6 flex flex-col items-center text-center">
           <div
             onClick={() => canEditInfo && fileInputRef.current?.click()}
-            className={`relative w-32 h-32 rounded-full overflow-hidden shadow-xl mb-4 border-2 border-[#2a3942] ${
+            className={`relative w-28 h-28 rounded-3xl overflow-hidden shadow-2xl mb-3 border-2 border-sky-400/40 p-1 ${
               canEditInfo ? 'cursor-pointer group' : ''
             }`}
           >
@@ -244,12 +228,12 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
               src={activeChat.avatar}
               name={activeChat.name}
               size="xl"
-              className="w-full h-full"
+              className="w-full h-full rounded-2xl"
             />
             {canEditInfo && (
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white transition">
-                <Camera className="w-5 h-5 mb-1" />
-                <span className="text-[9px] uppercase tracking-wider font-semibold">
+              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white transition rounded-2xl">
+                <Camera className="w-5 h-5 mb-1 text-sky-400" />
+                <span className="text-[9px] uppercase tracking-wider font-bold">
                   Change Icon
                 </span>
               </div>
@@ -263,7 +247,6 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
             className="hidden"
           />
 
-          {/* Group / Contact Name */}
           <div className="w-full">
             {isEditingName ? (
               <div className="flex items-center justify-center gap-2">
@@ -271,33 +254,33 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="bg-[#202c33] text-[#e9edef] text-base font-semibold text-center rounded-lg px-3 py-1 outline-none border border-[#00a884]"
+                  className="glass-input text-white text-sm font-bold text-center rounded-xl px-3 py-1 outline-none"
                   autoFocus
                 />
                 <button
                   onClick={handleSaveName}
-                  className="p-1.5 rounded-full bg-[#00a884] text-[#111b21]"
+                  className="p-1.5 rounded-xl bg-sky-500 text-slate-950"
                 >
                   <Check className="w-4 h-4 stroke-[3]" />
                 </button>
               </div>
             ) : (
               <div className="flex items-center justify-center gap-2">
-                <h3 className="text-lg font-bold text-[#e9edef] truncate">
+                <h3 className="text-base font-bold text-white truncate">
                   {activeChat.name}
                 </h3>
                 {canEditInfo && isGroup && (
                   <button
                     onClick={() => setIsEditingName(true)}
-                    className="text-[#8696a0] hover:text-[#e9edef]"
+                    className="text-slate-400 hover:text-white"
                   >
-                    <Edit2 className="w-4 h-4" />
+                    <Edit2 className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
             )}
 
-            <p className="text-xs text-[#8696a0] mt-1 font-mono">
+            <p className="text-[11px] text-slate-400 mt-1 font-mono">
               {isGroup
                 ? `Group • ${participants.length} participants`
                 : activeChat.otherUser?.phone}
@@ -305,10 +288,10 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* Description / About */}
-        <div className="p-4 bg-[#111b21] space-y-1">
-          <span className="text-xs font-semibold text-[#00a884]">
-            {isGroup ? 'Group Description' : 'About'}
+        {/* Description */}
+        <div className="p-4 space-y-1">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-sky-400">
+            {isGroup ? 'Group Description' : 'Bio'}
           </span>
           {isEditingDesc ? (
             <div className="flex items-center gap-2 mt-1">
@@ -316,27 +299,26 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
                 type="text"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Add a group description..."
-                className="flex-1 bg-[#202c33] text-xs text-[#e9edef] rounded px-3 py-1.5 outline-none border border-[#00a884]"
+                className="flex-1 glass-input text-xs text-white rounded-xl px-3 py-1.5 outline-none"
                 autoFocus
               />
               <button
                 onClick={handleSaveDesc}
-                className="p-1.5 rounded-full bg-[#00a884] text-[#111b21]"
+                className="p-1.5 rounded-xl bg-sky-500 text-slate-950"
               >
                 <Check className="w-4 h-4 stroke-[3]" />
               </button>
             </div>
           ) : (
             <div className="flex items-start justify-between">
-              <p className="text-xs text-[#e9edef] leading-relaxed">
+              <p className="text-xs text-slate-300 leading-relaxed">
                 {activeChat.description ||
                   (isGroup ? 'No description added yet.' : activeChat.otherUser?.about)}
               </p>
               {canEditInfo && isGroup && (
                 <button
                   onClick={() => setIsEditingDesc(true)}
-                  className="text-[#8696a0] hover:text-[#e9edef] ml-2"
+                  className="text-slate-400 hover:text-white ml-2"
                 >
                   <Edit2 className="w-3.5 h-3.5" />
                 </button>
@@ -344,36 +326,33 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
             </div>
           )}
           {isGroup && activeChat.createdAt && (
-            <p className="text-[10px] text-[#8696a0] pt-2">
+            <p className="text-[10px] text-slate-500 pt-2 font-mono">
               Created on {format(new Date(activeChat.createdAt), 'MMMM d, yyyy')}
             </p>
           )}
         </div>
 
-        {/* Group Admin Permissions Card (Admin Only) */}
+        {/* Group Admin Permissions */}
         {isGroup && isAdmin && (
-          <div className="p-4 bg-[#182229] space-y-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#ffd279]">
-              <Shield className="w-4 h-4 text-[#ffd279]" />
-              <span>Group Settings & Admin Controls</span>
+          <div className="p-4 space-y-3 bg-[#0E1A34]/40">
+            <div className="flex items-center gap-2 text-xs font-bold text-amber-400">
+              <Shield className="w-4 h-4" />
+              <span>Admin Privileges & Restrictions</span>
             </div>
 
-            {/* Toggle Send Messages */}
-            <div className="flex items-center justify-between bg-[#202c33] p-3 rounded-xl border border-[#2a3942]">
+            <div className="flex items-center justify-between glass-card bg-[#0E1A34]/60 p-3 rounded-2xl border border-sky-400/10">
               <div>
-                <p className="text-xs font-semibold text-[#e9edef]">
-                  Send Messages
-                </p>
-                <p className="text-[11px] text-[#8696a0]">
+                <p className="text-xs font-bold text-white">Send Messages</p>
+                <p className="text-[10px] text-slate-400">
                   {activeChat.adminOnlyMessage
-                    ? 'Only group admins can send messages'
-                    : 'All participants can send messages'}
+                    ? 'Only group admins can post'
+                    : 'All participants can post'}
                 </p>
               </div>
               <button
                 onClick={handleToggleAdminOnlyMessage}
                 className={`relative inline-flex h-5 w-10 items-center rounded-full transition ${
-                  activeChat.adminOnlyMessage ? 'bg-[#00a884]' : 'bg-[#374248]'
+                  activeChat.adminOnlyMessage ? 'bg-sky-500' : 'bg-slate-700'
                 }`}
               >
                 <span
@@ -384,22 +363,19 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
               </button>
             </div>
 
-            {/* Toggle Edit Group Info */}
-            <div className="flex items-center justify-between bg-[#202c33] p-3 rounded-xl border border-[#2a3942]">
+            <div className="flex items-center justify-between glass-card bg-[#0E1A34]/60 p-3 rounded-2xl border border-sky-400/10">
               <div>
-                <p className="text-xs font-semibold text-[#e9edef]">
-                  Edit Group Info
-                </p>
-                <p className="text-[11px] text-[#8696a0]">
+                <p className="text-xs font-bold text-white">Edit Group Info</p>
+                <p className="text-[10px] text-slate-400">
                   {activeChat.adminOnlyInfo
-                    ? 'Only group admins can change subject & icon'
-                    : 'All participants can edit group info'}
+                    ? 'Only group admins can edit subject & icon'
+                    : 'All participants can edit info'}
                 </p>
               </div>
               <button
                 onClick={handleToggleAdminOnlyInfo}
                 className={`relative inline-flex h-5 w-10 items-center rounded-full transition ${
-                  activeChat.adminOnlyInfo ? 'bg-[#00a884]' : 'bg-[#374248]'
+                  activeChat.adminOnlyInfo ? 'bg-sky-500' : 'bg-slate-700'
                 }`}
               >
                 <span
@@ -412,26 +388,25 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
           </div>
         )}
 
-        {/* Participants Section (For Groups) */}
+        {/* Participants List */}
         {isGroup && (
-          <div className="p-4 bg-[#111b21] space-y-3">
+          <div className="p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-[#8696a0]">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
                 {participants.length} Participants
               </span>
               {isAdmin && (
                 <button
                   onClick={openAddMembersModal}
-                  className="flex items-center gap-1.5 text-xs text-[#00a884] font-semibold hover:underline"
+                  className="flex items-center gap-1.5 text-xs text-sky-400 font-bold hover:underline"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
-                  Add Participants
+                  Add Member
                 </button>
               )}
             </div>
 
-            {/* Participant Items */}
-            <div className="divide-y divide-[#222d34]/40">
+            <div className="divide-y divide-white/5">
               {participants.map((p) => {
                 const isMe = p.userId === user?.id;
                 const isMemberAdmin = p.role === 'ADMIN';
@@ -451,37 +426,35 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
                         showOnlineStatus={true}
                       />
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold text-[#e9edef] truncate">
+                        <p className="text-xs font-bold text-white truncate">
                           {isMe ? 'You' : p.name}
                         </p>
-                        <p className="text-[10px] text-[#8696a0] truncate">
+                        <p className="text-[10px] text-slate-400 font-mono truncate">
                           {p.phone}
                         </p>
                       </div>
                     </div>
 
-                    {/* Role Badges & Admin Actions */}
                     <div className="flex items-center gap-2">
                       {isMemberCreator && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
                           <Crown className="w-2.5 h-2.5" /> Creator
                         </span>
                       )}
                       {isMemberAdmin && !isMemberCreator && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#00a884]/20 text-[#00a884] border border-[#00a884]/30">
-                          Group Admin
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-500/20 text-sky-300 border border-sky-400/30">
+                          Admin
                         </span>
                       )}
 
-                      {/* Admin action dropdown on other members */}
                       {isAdmin && !isMe && (
                         <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition">
                           {isMemberAdmin ? (
                             !isMemberCreator && (
                               <button
                                 onClick={() => handleChangeRole(p.userId, 'MEMBER')}
-                                className="p-1 rounded text-[#8696a0] hover:text-[#ffd279] hover:bg-[#202c33]"
-                                title="Dismiss as Admin"
+                                className="p-1 rounded-lg text-slate-400 hover:text-amber-300 hover:bg-white/10"
+                                title="Dismiss Admin"
                               >
                                 <ShieldAlert className="w-3.5 h-3.5" />
                               </button>
@@ -489,8 +462,8 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
                           ) : (
                             <button
                               onClick={() => handleChangeRole(p.userId, 'ADMIN')}
-                              className="p-1 rounded text-[#8696a0] hover:text-[#00a884] hover:bg-[#202c33]"
-                              title="Make Group Admin"
+                              className="p-1 rounded-lg text-slate-400 hover:text-sky-400 hover:bg-white/10"
+                              title="Make Admin"
                             >
                               <ShieldCheck className="w-3.5 h-3.5" />
                             </button>
@@ -499,8 +472,8 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
                           {!isMemberCreator && (
                             <button
                               onClick={() => handleRemoveMember(p.userId, p.name)}
-                              className="p-1 rounded text-[#8696a0] hover:text-red-400 hover:bg-red-500/20"
-                              title="Remove from Group"
+                              className="p-1 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/20"
+                              title="Kick Member"
                             >
                               <UserMinus className="w-3.5 h-3.5" />
                             </button>
@@ -515,13 +488,13 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
           </div>
         )}
 
-        {/* Exit & Delete Actions */}
-        <div className="p-4 bg-[#111b21] space-y-2">
+        {/* Exit / Delete Actions */}
+        <div className="p-4 space-y-2">
           {isGroup ? (
             <>
               <button
                 onClick={handleLeaveGroup}
-                className="w-full flex items-center gap-3 p-3 rounded-xl bg-[#202c33] hover:bg-red-500/10 text-red-400 font-semibold text-xs transition border border-[#2a3942]"
+                className="w-full flex items-center justify-center gap-2 p-3 rounded-2xl glass-card hover:bg-rose-500/15 text-rose-400 font-bold text-xs transition border border-rose-500/30"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Exit Group</span>
@@ -530,17 +503,17 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
               {isAdmin && (
                 <button
                   onClick={handleDeleteGroup}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-[#202c33] hover:bg-red-500/20 text-red-400 font-semibold text-xs transition border border-red-500/30"
+                  className="w-full flex items-center justify-center gap-2 p-3 rounded-2xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-bold text-xs transition border border-rose-500/40"
                 >
                   <Trash2 className="w-4 h-4" />
-                  <span>Delete Group for Everyone</span>
+                  <span>Delete Group</span>
                 </button>
               )}
             </>
           ) : (
             <button
               onClick={handleDeleteGroup}
-              className="w-full flex items-center gap-3 p-3 rounded-xl bg-[#202c33] hover:bg-red-500/20 text-red-400 font-semibold text-xs transition border border-[#2a3942]"
+              className="w-full flex items-center justify-center gap-2 p-3 rounded-2xl glass-card hover:bg-rose-500/20 text-rose-400 font-bold text-xs transition border border-rose-500/30"
             >
               <Trash2 className="w-4 h-4" />
               <span>Delete Conversation</span>
@@ -551,35 +524,35 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
 
       {/* Add Members Sub-Modal */}
       {isAddMemberOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="w-full max-w-md bg-[#111b21] rounded-2xl shadow-2xl border border-[#222d34] overflow-hidden flex flex-col max-h-[80vh]">
-            <div className="px-5 py-4 bg-[#202c33] flex items-center justify-between border-b border-[#222d34]">
-              <h3 className="text-sm font-semibold text-[#e9edef] flex items-center gap-2">
-                <UserPlus className="w-4 h-4 text-[#00a884]" />
-                Add Members to Group
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-pop">
+          <div className="w-full max-w-md glass-panel bg-[#070D1E] rounded-3xl shadow-2xl border border-sky-400/20 overflow-hidden flex flex-col max-h-[80vh]">
+            <div className="px-5 py-4 bg-[#0E1A34]/80 flex items-center justify-between border-b border-white/10">
+              <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                <UserPlus className="w-4 h-4 text-sky-400" />
+                Add Participants
               </h3>
               <button
                 onClick={() => setIsAddMemberOpen(false)}
-                className="p-1 rounded-full text-[#8696a0] hover:text-[#e9edef]"
+                className="p-1 rounded-full text-slate-400 hover:text-white"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-3 border-b border-[#222d34]">
+            <div className="p-3 border-b border-white/10">
               <div className="relative">
-                <Search className="w-3.5 h-3.5 text-[#8696a0] absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Search contacts..."
                   value={searchUserQuery}
                   onChange={(e) => setSearchUserQuery(e.target.value)}
-                  className="w-full bg-[#202c33] text-xs text-[#e9edef] rounded-lg pl-8 pr-3 py-2 outline-none border border-[#2a3942]"
+                  className="w-full glass-input text-xs text-white rounded-xl pl-8 pr-3 py-2 outline-none"
                 />
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-2 divide-y divide-[#222d34]/40">
+            <div className="flex-1 overflow-y-auto p-2 divide-y divide-white/5">
               {availableUsers
                 .filter(
                   (u) =>
@@ -599,24 +572,22 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
                             : [...prev, u.id]
                         )
                       }
-                      className={`flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition ${
-                        isSelected ? 'bg-[#00a884]/20' : 'hover:bg-[#202c33]'
+                      className={`flex items-center justify-between p-2.5 rounded-2xl cursor-pointer transition ${
+                        isSelected ? 'bg-sky-500/20' : 'hover:bg-[#13203E]/50'
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <Avatar src={u.avatar} name={u.name} size="sm" />
                         <div>
-                          <p className="text-xs font-semibold text-[#e9edef]">
-                            {u.name}
-                          </p>
-                          <p className="text-[10px] text-[#8696a0]">{u.phone}</p>
+                          <p className="text-xs font-bold text-white">{u.name}</p>
+                          <p className="text-[10px] text-slate-400 font-mono">{u.phone}</p>
                         </div>
                       </div>
                       <div
-                        className={`w-5 h-5 rounded-md border flex items-center justify-center ${
+                        className={`w-5 h-5 rounded-lg border flex items-center justify-center ${
                           isSelected
-                            ? 'bg-[#00a884] border-[#00a884] text-[#111b21]'
-                            : 'border-[#8696a0]/40'
+                            ? 'bg-sky-500 border-sky-500 text-slate-950 font-bold'
+                            : 'border-white/20'
                         }`}
                       >
                         {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
@@ -626,17 +597,17 @@ const GroupInfoDrawer = ({ isOpen, onClose }) => {
                 })}
             </div>
 
-            <div className="p-3 bg-[#202c33] border-t border-[#222d34] flex justify-end gap-2">
+            <div className="p-3 bg-[#0E1A34]/80 border-t border-white/10 flex justify-end gap-2">
               <button
                 onClick={() => setIsAddMemberOpen(false)}
-                className="px-4 py-1.5 text-xs text-[#8696a0] hover:text-[#e9edef]"
+                className="px-4 py-1.5 text-xs font-semibold text-slate-400 hover:text-white"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddMembersSubmit}
                 disabled={selectedUserIds.length === 0}
-                className="px-4 py-1.5 bg-[#00a884] hover:bg-[#02906f] text-white text-xs font-semibold rounded-lg disabled:opacity-50 transition"
+                className="px-4 py-1.5 bg-gradient-to-r from-sky-500 to-blue-600 text-slate-950 text-xs font-bold rounded-xl disabled:opacity-50 transition"
               >
                 Add Selected ({selectedUserIds.length})
               </button>

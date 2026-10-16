@@ -8,34 +8,31 @@ export default {
   theme: {
     extend: {
       colors: {
-        wa: {
-          green: {
-            DEFAULT: '#00a884',
-            dark: '#008069',
-            light: '#25d366',
-            hover: '#02906f'
-          },
-          bg: {
-            dark: '#111b21',
-            darker: '#0c1317',
-            panel: '#202c33',
-            input: '#2a3942',
-            bubble: '#005c4b',
-            bubbleIncoming: '#202c33',
-            light: '#f0f2f5',
-            lightBubble: '#d9fdd3',
-            lightIncoming: '#ffffff'
-          },
-          text: {
-            primary: '#e9edef',
-            secondary: '#8696a0',
-            muted: '#667781',
-            accent: '#53bdeb'
-          },
-          border: {
-            dark: '#222d34',
-            light: '#e9edef'
-          }
+        navy: {
+          950: '#070D1E', // Ultra-deep velvet cosmic navy backdrop
+          900: '#0A1226',
+          800: '#0E1A34', // Frosted Slate Navy panel
+          700: '#13203E', // Incoming message bubble
+          600: '#16264A', // Active item hover / card surface
+          500: '#1E325E'
+        },
+        slate: {
+          850: '#152033',
+          750: '#23334D'
+        },
+        sapphire: {
+          DEFAULT: '#0284C7',
+          50: '#F0F9FF',
+          100: '#E0F2FE',
+          200: '#BAE6FD',
+          300: '#7DD3FC',
+          400: '#38BDF8', // Luminous flare
+          500: '#0EA5E9',
+          600: '#0284C7', // Outgoing bubble gradient start
+          700: '#2563EB', // Outgoing bubble gradient end
+          800: '#1D4ED8',
+          900: '#1E40AF',
+          950: '#0C2340'
         }
       }
     },

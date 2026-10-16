@@ -1,7 +1,7 @@
 import React from 'react';
 import { useChat } from '../../context/ChatContext';
 import ChatListItem from './ChatListItem';
-import { Search, Filter, MessageSquare, Users } from 'lucide-react';
+import { Search, MessageSquare, Bot } from 'lucide-react';
 
 const ChatList = ({ onOpenNewChat }) => {
   const {
@@ -15,9 +15,7 @@ const ChatList = ({ onOpenNewChat }) => {
     loadingChats
   } = useChat();
 
-  // Filter chats based on search query and active tab
   const filteredChats = chats.filter((chat) => {
-    // Search query filter
     const matchesSearch =
       !searchFilter ||
       chat.name.toLowerCase().includes(searchFilter.toLowerCase()) ||
@@ -26,7 +24,6 @@ const ChatList = ({ onOpenNewChat }) => {
 
     if (!matchesSearch) return false;
 
-    // Tab filter
     if (tabFilter === 'unread') {
       return (chat.unreadCount || 0) > 0;
     }
@@ -38,48 +35,48 @@ const ChatList = ({ onOpenNewChat }) => {
   });
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-[#111b21]">
+    <div className="flex-1 flex flex-col min-h-0 bg-transparent">
       {/* Search & Filter Bar */}
-      <div className="p-2 space-y-2 border-b border-[#222d34]/60">
+      <div className="p-3 space-y-2.5 border-b border-sky-400/10">
         <div className="relative">
-          <Search className="w-4 h-4 text-[#8696a0] absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search or start new chat"
+            placeholder="Search conversations..."
             value={searchFilter}
             onChange={(e) => setSearchFilter(e.target.value)}
-            className="w-full bg-[#202c33] text-[#e9edef] placeholder-[#8696a0] text-xs rounded-lg pl-9 pr-3 py-2 outline-none focus:ring-1 focus:ring-[#00a884] border border-transparent transition"
+            className="w-full glass-input text-white placeholder-slate-500 text-xs rounded-xl pl-9 pr-3 py-2 outline-none transition"
           />
         </div>
 
         {/* Tab Filter Pills */}
-        <div className="flex items-center gap-1.5 px-1">
+        <div className="flex items-center gap-1.5 px-0.5">
           <button
             onClick={() => setTabFilter('all')}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+            className={`px-3 py-1 rounded-xl text-xs font-semibold transition ${
               tabFilter === 'all'
-                ? 'bg-[#00a884] text-[#111b21] font-bold'
-                : 'bg-[#202c33] text-[#8696a0] hover:text-[#e9edef]'
+                ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-slate-950 font-bold shadow-md shadow-sky-500/20'
+                : 'bg-white/5 text-slate-400 hover:text-white'
             }`}
           >
             All
           </button>
           <button
             onClick={() => setTabFilter('unread')}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+            className={`px-3 py-1 rounded-xl text-xs font-semibold transition ${
               tabFilter === 'unread'
-                ? 'bg-[#00a884] text-[#111b21] font-bold'
-                : 'bg-[#202c33] text-[#8696a0] hover:text-[#e9edef]'
+                ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-slate-950 font-bold shadow-md shadow-sky-500/20'
+                : 'bg-white/5 text-slate-400 hover:text-white'
             }`}
           >
             Unread
           </button>
           <button
             onClick={() => setTabFilter('groups')}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+            className={`px-3 py-1 rounded-xl text-xs font-semibold transition ${
               tabFilter === 'groups'
-                ? 'bg-[#00a884] text-[#111b21] font-bold'
-                : 'bg-[#202c33] text-[#8696a0] hover:text-[#e9edef]'
+                ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-slate-950 font-bold shadow-md shadow-sky-500/20'
+                : 'bg-white/5 text-slate-400 hover:text-white'
             }`}
           >
             Groups
@@ -88,18 +85,18 @@ const ChatList = ({ onOpenNewChat }) => {
       </div>
 
       {/* Chat List Items */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden divide-y divide-white/5">
         {loadingChats && chats.length === 0 ? (
-          <div className="p-8 text-center text-[#8696a0] text-xs">
-            <div className="w-6 h-6 border-2 border-[#00a884] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+          <div className="p-8 text-center text-slate-400 text-xs">
+            <div className="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
             Loading conversations...
           </div>
         ) : filteredChats.length === 0 ? (
-          <div className="p-8 text-center text-[#8696a0] space-y-3">
-            <MessageSquare className="w-10 h-10 mx-auto text-[#8696a0]/40" />
+          <div className="p-8 text-center text-slate-400 space-y-3">
+            <MessageSquare className="w-10 h-10 mx-auto text-slate-600" />
             <p className="text-xs">
               {searchFilter
-                ? 'No chats found matching your search.'
+                ? 'No chats matching your search.'
                 : tabFilter === 'unread'
                 ? 'No unread messages.'
                 : tabFilter === 'groups'
@@ -109,9 +106,9 @@ const ChatList = ({ onOpenNewChat }) => {
             {!searchFilter && (
               <button
                 onClick={onOpenNewChat}
-                className="px-4 py-2 bg-[#00a884] hover:bg-[#02906f] text-white text-xs font-semibold rounded-lg transition"
+                className="px-4 py-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-slate-950 text-xs font-bold rounded-xl shadow-lg transition"
               >
-                Start a New Chat
+                Start New Chat
               </button>
             )}
           </div>

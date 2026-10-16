@@ -8,20 +8,34 @@ generator client {
 }
 
 model User {
-  id          String            @id @default(uuid())
-  phone       String            @unique
-  name        String
-  password    String
-  avatar      String?
-  about       String            @default("Hey there! I am using NextChat.")
-  isOnline    Boolean           @default(false)
-  lastSeen    DateTime          @default(now())
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id             String            @id @default(uuid())
+  phone          String            @unique
+  name           String
+  password       String?
+  avatar         String?
+  about          String            @default("Exploring the future on NextChat ⚡")
+  isOnline       Boolean           @default(false)
+  lastSeen       DateTime          @default(now())
+  ghostMode      Boolean           @default(false)
+  preferredTheme String            @default("cyber")
+  soundEnabled   Boolean           @default(true)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 
-  participants ChatParticipant[]
-  sentMessages  Message[]
-  createdChats  Chat[]          @relation("ChatCreator")
+  participants   ChatParticipant[]
+  sentMessages   Message[]
+  createdChats   Chat[]            @relation("ChatCreator")
+}
+
+model OtpCode {
+  id        String   @id @default(uuid())
+  phone     String
+  code      String
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([phone, code])
 }
 
 model Chat {
@@ -33,6 +47,7 @@ model Chat {
   creatorId        String?
   adminOnlyMessage Boolean           @default(false)
   adminOnlyInfo    Boolean           @default(false)
+  pinnedMessageId  String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
@@ -56,22 +71,27 @@ model ChatParticipant {
 }
 
 model Message {
-  id         String    @id @default(uuid())
-  chatId     String
-  senderId   String
-  content    String?
-  type       String    @default("TEXT") // "TEXT", "IMAGE", "AUDIO", "DOCUMENT", "SYSTEM"
-  mediaUrl   String?
-  fileName   String?
-  fileSize   Int?
-  replyToId  String?
-  isDeleted  Boolean   @default(false)
-  deletedFor String    @default("[]") // JSON string of user IDs who deleted this for themselves
-  status     String    @default("SENT") // "SENT", "DELIVERED", "READ"
-  createdAt  DateTime  @default(now())
+  id                   String    @id @default(uuid())
+  chatId               String
+  senderId             String
+  content              String?
+  type                 String    @default("TEXT") // "TEXT", "IMAGE", "AUDIO", "DOCUMENT", "SYSTEM", "POLL", "CODE", "AI"
+  mediaUrl             String?
+  fileName             String?
+  fileSize             Int?
+  replyToId            String?
+  isPinned             Boolean   @default(false)
+  selfDestructDuration Int?      // in seconds: e.g. 5, 30, 60, 300, 3600
+  expiresAt            DateTime? // When message should vanish
+  reactions            String    @default("{}") // JSON string: { "❤️": ["userId1"], "🔥": ["userId2"] }
+  pollData             String?   // JSON string: { "question": "...", "options": [ { "id": 1, "text": "...", "votes": ["userId1"] } ], "isMulti": false }
+  isDeleted            Boolean   @default(false)
+  deletedFor           String    @default("[]") // JSON string of user IDs who deleted this for themselves
+  status               String    @default("SENT") // "SENT", "DELIVERED", "READ"
+  createdAt            DateTime  @default(now())
 
-  chat       Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  sender     User      @relation(fields: [senderId], references: [id], onDelete: Cascade)
-  replyTo    Message?  @relation("MessageReplies", fields: [replyToId], references: [id])
-  replies    Message[] @relation("MessageReplies")
+  chat                 Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender               User      @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  replyTo              Message?  @relation("MessageReplies", fields: [replyToId], references: [id])
+  replies              Message[] @relation("MessageReplies")
 }
